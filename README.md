@@ -20,6 +20,7 @@ However, here's a refresher:
 - Division can be achieved if and only if our modulus is a `prime number`, with something called the [Extended Euclidean Algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm).
 - The set of numbers `{ 1, 2, ... p-1 }` form a `multiplicative Group`, which means addition, substraction, multiplication and division work "nicely".
 - Our Group also has something called a `Generator`, which is a member of that group that you can multiply by itself over and over again that iterates the entire Group.
+- In practice, we will also look at Generators that do not generate the *entire* Group, but only a *Subgroup* instead. More on that later.
 
 To give an example, let's take `p=7` (i.e. `(mod 7)`) - the Group members are `{ 1, 2, 3, 4, 5, 6 }`.  
 The number `3` is a *generator* - let's multiply it by itself over and over again:
@@ -35,6 +36,13 @@ The number `3` is a *generator* - let's multiply it by itself over and over agai
 (By the way, you do not need to calculate `3^6` directly - you can just look at `3^5 = 5 (mod 7)` and multiply by 3: `3^6 = 3*5 (mod 7) = 15 (mod 7) = 1 (mod 7)`)  
 
 Note how the generator created all of the elements in our Group, but with a "weird" order - this happens due to modular arithmetic. In the next section we'll take advantage of that.  
+If we take a different value (let's say `g=4`) then we do not get all elements, but we still get a `Subgroup`:
+```
+4^1 = 4        (mod 7)
+4^2 = 16 = 2   (mod 7)
+4^3 = 64 = 1   (mod 7)
+```
+
 I hope all of these definitions and arithmetic operations are clear - if not, please read my previous blogposts again.
 
 ## Diffie-Hellman: key exchange via exponentiation
@@ -70,3 +78,14 @@ Let us now imagine an evesdropper in the middle - what can they do?
 One important aspect here is that `g^a (mod p)` appears just as a number. Attacker knows `g` and `p`, but magically cannot deduce `a` efficiently.  
 In real numbers, we use [Logarithms](https://en.wikipedia.org/wiki/Logarithm) to solve the problem of finding the value of `a`, but those do not have an easy-to-calculate modular counterpart.  
 What Diffie-Hellman exploits here is called the [Discrete Logarithm problem](https://en.wikipedia.org/wiki/Discrete_logarithm), which is computationally believed to be difficult for a computer to solve, assuming a very large value of `p`.
+
+### Some notes on parameter selection
+The most obvious danger is that `g` generates a really small number of elements in the Group.  
+Therefore, there are some interesting notes I'd like to mention on the parameter selection (`p` and `g`).  
+1. The prime `p` must be large to make the Discrete logarithm problem hard; it'd usually be 2048 bits or more. I've written [a blotpost](https://github.com/yo-yo-yo-jbo/generating_random_primes/) on how to generate random prime numbers, you should check it out for details on how that's achieved.
+2. Often, `p` is a *safe prime*, which is a prime where `p = 2q + 1` and `q` is also prime. This ensures the multiplicative Group modulo `p` has a large prime-order subgroup, helping avoid small subgroup attacks.
+3. The generator `g` should be a *primitive root* modulo `p` — meaning that for every number `x` in the Group, there exists an integer `k` where `g^k = x (mod p)`.
+4. More practically: `g` is often selected to generate a large cyclic subgroup of order `q` (the same `q` that was used to define `p` if `p` is a safe prime).
+5. In practice, `p` and `g` are not just randomly selected, but only selected from a standard agreed-upon list (e.g. [RFC 3526](https://www.ietf.org/rfc/rfc3526.txt) has some of those).
+
+That's quite important - when I learned about Diffie-Hellman I thought `g` is a generator of the entire multiplicative Group and that is *not* the case - it's a generator of a *sufficiently large* subgroup.
