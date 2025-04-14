@@ -89,3 +89,23 @@ Therefore, there are some interesting notes I'd like to mention on the parameter
 5. In practice, `p` and `g` are not just randomly selected, but only selected from a standard agreed-upon list (e.g. [RFC 3526](https://www.ietf.org/rfc/rfc3526.txt) has some of those).
 
 That's quite important - when I learned about Diffie-Hellman I thought `g` is a generator of the entire multiplicative Group and that is *not* the case - it's a generator of a *sufficiently large* subgroup.
+
+## MiTM attack on our key exchange protocol
+We said that an evesdropper won't be able to derive the joint key (without paying a very high computational cost), but we haven't said anything about *active* attackers.  
+Here is an example of a [Man-in-The-Middle (MiTM)](https://en.wikipedia.org/wiki/Man-in-the-middle_attack) attack on the protocol employed by `Alice` and `Bob`:
+1. `Alice` sends the correct `p` and `g` combination to `Bob`, but `Mal` is lurking on the internet and intercepts that, taking note of the agreed `p` and `g`.
+2. `Alice` generates the number `a` and sends `g^a (mod p)`, believing it was sent to `Bob`. At this point, `Mal` generates her own number `x` and sends `g^x (mod p)` to `Alice`.
+3. `Alice` thinks she is talking with `Bob`, while both her and `Mal` both created a joint key `g^(ax) (mod p)`.
+4. `Mal` can even do the same thing with `Bob` - generate a number `y` and send `Bob` (`g^y (mod p)`), intercepting `Bob`'s `g^b (mod p)` value and creating a joint key with `Bob`: `g^(by) (mod p)`.
+5. Now `Mal` can decrypt packets sent from `Alice` to `Bob`, as well as the other diretion!
+
+If you think about it - that's a problem in *every* key exchange protocol, and in fact - a fundemental problem - how do we validate the *authenticity* of the other party?  
+This problem is (practically) solved with [Public Key Infrastructure (PKI)](https://en.wikipedia.org/wiki/Public_key_infrastructure) which I might elaborate on some day.  
+If you've ever heard of `Certifiates` (used in `SSL \ TLS`, for instance) then they're very much related to `PKI`!
+
+## Summary
+While this was a short blogpost, I thought it was necessary - my plan is to blog on Elliptic Curve Cryptography soon, and I wanted everyone to have the right background on `Diffie-Hellman` so I could show how it's implemented in the context of Elliptic Curves.
+
+Stay tuned!
+
+Jonathan Bar Or
